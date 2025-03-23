@@ -1,0 +1,15 @@
+- name: Install tools
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - wget
+    - curl
+    - vim
+    - openssl
+
+- name: Install kubectl
+  get_url:
+    url: https://dl.k8s.io/v1.31.2/bin/linux/amd64/kubectl
+    dest: /usr/bin/kubectl
+    mode: "u+rwx"

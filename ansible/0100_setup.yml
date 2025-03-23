@@ -1,0 +1,4 @@
+- name: Setup all VMs
+  hosts: all
+  roles:
+    - commontools
