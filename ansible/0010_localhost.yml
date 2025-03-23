@@ -1,42 +1,41 @@
-- name: Setup Ansible inventory
+- name: Setup Ansible inventory based on Terraform output
   hosts: localhost
+  gather_facts: no
   tasks:
-  - name: Parse Terraform output
-    block:
-      - name: Load file
-        set_fact:
-          terraform_yml: "{{ lookup('file', 'terraform.output.json') }}"
-      
-      # Parse the JSON/YAML file and register variables
-      - name: Parse file
-        set_fact: 
-          terraform_dict: "{{ terraform_yml | from_yaml }}"
+    - name: Load file
+      set_fact:
+        terraform_yml: "{{ lookup('file', 'terraform.output.json') }}"
+    
+    # Parse the JSON/YAML file and register variables
+    - name: Parse file
+      set_fact: 
+        terraform_dict: "{{ terraform_yml | from_yaml }}"
 
-      - name: Gather facts
-        set_fact: 
-          jumpbox_wan_ip: "{{ terraform_dict['jumpbox_wan_ip']['value'] }}"
-          server_wan_ip: "{{ terraform_dict['server_wan_ip']['value'] }}"
-          node_wan_ips: "{{ terraform_dict['node_wan_ip']['value'] }}"
+    - name: Gather facts
+      set_fact: 
+        jumpbox_wan_ip: "{{ terraform_dict['jumpbox_wan_ip']['value'] }}"
+        server_wan_ip: "{{ terraform_dict['server_wan_ip']['value'] }}"
+        node_wan_ips: "{{ terraform_dict['node_wan_ip']['value'] }}"
 
-      - name: Generate hosts.ini
-        set_fact:
-          hosts_ini: |
-            [all:vars]
-            ansible_user=root
+    - name: Generate hosts.ini
+      set_fact:
+        hosts_ini: |
+          [all:vars]
+          ansible_user=root
 
-            [jumpbox]
-            jumpbox_0 ansible_host={{ jumpbox_wan_ip }}
+          [jumpbox]
+          jumpbox_0 ansible_host={{ jumpbox_wan_ip }}
 
-            [server]
-            server_0 ansible_host={{ server_wan_ip }}
+          [server]
+          server_0 ansible_host={{ server_wan_ip }}
 
-            [node]
-            {% for ip in node_wan_ips %}
-            {% set i = loop.index0 %}
-            node_{{ i }} ansible_host={{ ip }} pod_subnet=10.200.{{ i }}.0/24
-            {% endfor %}
+          [node]
+          {% for ip in node_wan_ips %}
+          {% set i = loop.index0 %}
+          node_{{ i }} ansible_host={{ ip }} pod_subnet=10.200.{{ i }}.0/24
+          {% endfor %}
 
-      - name: Write hosts.ini
-        copy:
-          content: "{{ hosts_ini }}"
-          dest: "hosts.ini"
+    - name: Write hosts.ini
+      copy:
+        content: "{{ hosts_ini }}"
+        dest: "hosts.ini"
